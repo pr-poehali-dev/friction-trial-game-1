@@ -7,7 +7,7 @@ import Icon from '@/components/ui/icon';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
-type GameStage = 'intro' | 'prosecution' | 'defense' | 'witnesses' | 'quiz' | 'verdict';
+type GameStage = 'intro' | 'character-select' | 'character-intro' | 'prosecution' | 'defense' | 'witnesses' | 'quiz' | 'verdict';
 
 interface Character {
   id: string;
@@ -140,6 +140,7 @@ const questions: Question[] = [
 
 const Index = () => {
   const [stage, setStage] = useState<GameStage>('intro');
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(Array(questions.length).fill(null));
   const [showExplanation, setShowExplanation] = useState(false);
@@ -147,6 +148,21 @@ const Index = () => {
 
   const prosecutionChar = characters.find(c => c.id === 'prosecution')!;
   const defenseChar = characters.find(c => c.id === 'defense')!;
+
+  const CharacterBadge = () => {
+    const charMap: Record<string, { name: string; icon: string; colorClass: string }> = {
+      prosecution: { name: 'Обвинение', icon: 'Flame', colorClass: 'bg-destructive' },
+      defense: { name: 'Защита', icon: 'ShieldCheck', colorClass: 'bg-success' },
+      judge: { name: 'Судья', icon: 'Scale', colorClass: 'bg-primary' }
+    };
+    const char = charMap[selectedCharacter || 'judge'];
+    return (
+      <div className={`inline-flex items-center gap-2 ${char.colorClass} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg`}>
+        <Icon name={char.icon as any} size={16} />
+        Вы: {char.name}
+      </div>
+    );
+  };
 
   const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
     const newAnswers = [...answers];
@@ -209,11 +225,11 @@ const Index = () => {
           </div>
 
           <Button 
-            onClick={() => setStage('prosecution')} 
+            onClick={() => setStage('character-select')} 
             size="lg" 
             className="w-full text-lg font-semibold"
           >
-            Начать судебное заседание
+            Выбрать персонажа
             <Icon name="ChevronRight" className="ml-2" size={20} />
           </Button>
         </CardContent>
@@ -221,13 +237,244 @@ const Index = () => {
     </div>
   );
 
-  const renderProsecution = () => (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-red-50 to-orange-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Badge variant="outline" className="mb-2">Этап 1 из 5</Badge>
-          <Progress value={20} className="h-2" />
+  const renderCharacterSelect = () => {
+    const selectableCharacters = [
+      {
+        id: 'prosecution',
+        name: 'Обвинение',
+        role: 'Вредное трение',
+        icon: 'Flame',
+        color: 'destructive',
+        bgColor: 'from-red-50 to-orange-50',
+        description: 'Докажите, что трение наносит вред технике и приводит к потерям энергии',
+        mission: 'Представить доказательства вреда трения для механизмов'
+      },
+      {
+        id: 'defense',
+        name: 'Защита',
+        role: 'Полезное трение',
+        icon: 'ShieldCheck',
+        color: 'success',
+        bgColor: 'from-green-50 to-emerald-50',
+        description: 'Докажите, что трение необходимо для нормальной жизни',
+        mission: 'Защитить трение, показав его важность в повседневной жизни'
+      },
+      {
+        id: 'judge',
+        name: 'Судья',
+        role: 'Ведущий суда',
+        icon: 'Scale',
+        color: 'primary',
+        bgColor: 'from-blue-50 to-cyan-50',
+        description: 'Беспристрастно выслушайте обе стороны и вынесите справедливый вердикт',
+        mission: 'Объективно оценить аргументы и принять взвешенное решение'
+      }
+    ];
+
+    return (
+      <div className="min-h-screen p-6 bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <Card className="shadow-2xl mb-8 animate-fade-in">
+            <CardHeader className="text-center">
+              <CardTitle className="text-4xl font-heading font-bold mb-2">
+                Выберите свою роль
+              </CardTitle>
+              <p className="text-muted-foreground text-lg">
+                Каждый персонаж имеет уникальную перспективу на силу трения
+              </p>
+            </CardHeader>
+          </Card>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {selectableCharacters.map((char, index) => (
+              <Card 
+                key={char.id}
+                className="cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-scale-up group"
+                style={{ animationDelay: `${index * 0.15}s` }}
+                onClick={() => {
+                  setSelectedCharacter(char.id);
+                  setStage('character-intro');
+                }}
+              >
+                <CardHeader className={`bg-gradient-to-br ${char.bgColor} rounded-t-lg`}>
+                  <div className="flex justify-center mb-4">
+                    <div className={`bg-${char.color}/20 p-6 rounded-full group-hover:scale-110 transition-transform`}>
+                      <Icon name={char.icon as any} size={64} className={`text-${char.color}`} />
+                    </div>
+                  </div>
+                  <CardTitle className="text-2xl font-heading text-center">{char.name}</CardTitle>
+                  <p className="text-center text-muted-foreground font-semibold">{char.role}</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <p className="text-muted-foreground leading-relaxed">
+                    {char.description}
+                  </p>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Icon name="Target" size={16} />
+                      Ваша миссия:
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {char.mission}
+                    </p>
+                  </div>
+                  <Button className="w-full" variant={char.id === 'judge' ? 'outline' : 'default'}>
+                    Играть за {char.name}
+                    <Icon name="ArrowRight" className="ml-2" size={18} />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Button 
+            onClick={() => setStage('intro')} 
+            variant="ghost" 
+            className="mt-8 mx-auto flex items-center"
+          >
+            <Icon name="ArrowLeft" className="mr-2" size={18} />
+            Назад
+          </Button>
         </div>
+      </div>
+    );
+  };
+
+  const renderCharacterIntro = () => {
+    const charData: Record<string, any> = {
+      prosecution: {
+        name: 'Обвинение',
+        icon: 'Flame',
+        color: 'text-destructive',
+        bgColor: 'from-red-50 to-orange-50',
+        quote: 'Трение — главный враг эффективности!',
+        facts: [
+          'Трение вызывает износ деталей на миллиарды рублей ежегодно',
+          'До 20% энергии двигателя теряется из-за трения',
+          'Космические аппараты требуют специальной смазки для работы в условиях трения'
+        ],
+        animation: {
+          icon: 'Zap',
+          text: 'Энергия теряется при каждом движении!'
+        }
+      },
+      defense: {
+        name: 'Защита',
+        icon: 'ShieldCheck',
+        color: 'text-success',
+        bgColor: 'from-green-50 to-emerald-50',
+        quote: 'Без трения жизнь невозможна!',
+        facts: [
+          'Трение позволяет нам ходить и бегать',
+          'Тормозная система автомобилей спасает миллионы жизней благодаря трению',
+          'Даже письмо ручкой возможно только благодаря силе трения'
+        ],
+        animation: {
+          icon: 'Heart',
+          text: 'Трение защищает нас каждый день!'
+        }
+      },
+      judge: {
+        name: 'Судья',
+        icon: 'Scale',
+        color: 'text-primary',
+        bgColor: 'from-blue-50 to-cyan-50',
+        quote: 'Справедливость требует взвешенного подхода',
+        facts: [
+          'Физика трения изучается более 300 лет',
+          'Коэффициент трения зависит от материала и условий',
+          'Современные технологии позволяют управлять трением'
+        ],
+        animation: {
+          icon: 'Brain',
+          text: 'Истина требует научного анализа!'
+        }
+      }
+    };
+
+    const char = charData[selectedCharacter || 'judge'];
+
+    return (
+      <div className={`min-h-screen p-6 bg-gradient-to-br ${char.bgColor}`}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="shadow-2xl animate-scale-up">
+            <CardHeader className="text-center pb-6">
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className={`bg-white p-8 rounded-full shadow-xl animate-pulse`}>
+                    <Icon name={char.icon as any} size={80} className={char.color} />
+                  </div>
+                  <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl animate-bounce">
+                    !
+                  </div>
+                </div>
+              </div>
+              <CardTitle className="text-4xl font-heading font-bold mb-4">
+                Вы играете за: {char.name}
+              </CardTitle>
+              <p className={`text-2xl font-semibold italic ${char.color}`}>
+                "{char.quote}"
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-muted/50 p-6 rounded-lg">
+                <h3 className="font-heading font-semibold text-xl mb-4 flex items-center gap-2">
+                  <Icon name={char.animation.icon as any} size={24} className={char.color} />
+                  Важные факты
+                </h3>
+                <div className="space-y-3">
+                  {char.facts.map((fact: string, index: number) => (
+                    <div 
+                      key={index}
+                      className="flex gap-3 items-start animate-slide-right"
+                      style={{ animationDelay: `${index * 0.2}s` }}
+                    >
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${char.bgColor} flex items-center justify-center`}>
+                          <Icon name="Check" size={14} className={char.color} />
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed">{fact}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative h-40 bg-slate-200 rounded-lg overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-4 animate-bounce">
+                    <Icon name={char.animation.icon as any} size={64} className={char.color} />
+                    <p className="font-semibold text-lg">{char.animation.text}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => setStage('prosecution')} 
+                size="lg" 
+                className="w-full text-lg font-semibold"
+              >
+                Начать судебное заседание
+                <Icon name="ChevronRight" className="ml-2" size={20} />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProsecution = () => {
+    return (
+      <div className="min-h-screen p-6 bg-gradient-to-br from-red-50 to-orange-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">Этап 1 из 5</Badge>
+              <Progress value={20} className="h-2 w-64" />
+            </div>
+            <CharacterBadge />
+          </div>
 
         <Card className="shadow-2xl animate-fade-in">
           <CardHeader className="bg-destructive/5">
@@ -290,15 +537,20 @@ const Index = () => {
         </Card>
       </div>
     </div>
-  );
+    );
+  };
 
-  const renderDefense = () => (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Badge variant="outline" className="mb-2">Этап 2 из 5</Badge>
-          <Progress value={40} className="h-2" />
-        </div>
+  const renderDefense = () => {
+    return (
+      <div className="min-h-screen p-6 bg-gradient-to-br from-green-50 to-emerald-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">Этап 2 из 5</Badge>
+              <Progress value={40} className="h-2 w-64" />
+            </div>
+            <CharacterBadge />
+          </div>
 
         <Card className="shadow-2xl animate-fade-in">
           <CardHeader className="bg-success/5">
@@ -363,15 +615,20 @@ const Index = () => {
         </Card>
       </div>
     </div>
-  );
+    );
+  };
 
-  const renderWitnesses = () => (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 to-cyan-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Badge variant="outline" className="mb-2">Этап 3 из 5</Badge>
-          <Progress value={60} className="h-2" />
-        </div>
+  const renderWitnesses = () => {
+    return (
+      <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 to-cyan-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">Этап 3 из 5</Badge>
+              <Progress value={60} className="h-2 w-64" />
+            </div>
+            <CharacterBadge />
+          </div>
 
         <Card className="shadow-2xl animate-fade-in mb-6">
           <CardHeader className="text-center">
@@ -430,7 +687,8 @@ const Index = () => {
         </Button>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderQuiz = () => {
     const question = questions[currentQuestion];
@@ -439,11 +697,14 @@ const Index = () => {
     return (
       <div className="min-h-screen p-6 bg-gradient-to-br from-purple-50 to-indigo-50">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-6">
-            <Badge variant="outline" className="mb-2">
-              Этап 4 из 5 • Вопрос {currentQuestion + 1} из {questions.length}
-            </Badge>
-            <Progress value={60 + (currentQuestion / questions.length) * 20} className="h-2" />
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">
+                Этап 4 из 5 • Вопрос {currentQuestion + 1} из {questions.length}
+              </Badge>
+              <Progress value={60 + (currentQuestion / questions.length) * 20} className="h-2 w-64" />
+            </div>
+            <CharacterBadge />
           </div>
 
           <Card className="shadow-2xl animate-scale-up">
@@ -628,6 +889,7 @@ const Index = () => {
               <Button 
                 onClick={() => {
                   setStage('intro');
+                  setSelectedCharacter(null);
                   setCurrentQuestion(0);
                   setAnswers(Array(questions.length).fill(null));
                   setShowExplanation(false);
@@ -651,6 +913,10 @@ const Index = () => {
     switch (stage) {
       case 'intro':
         return renderIntro();
+      case 'character-select':
+        return renderCharacterSelect();
+      case 'character-intro':
+        return renderCharacterIntro();
       case 'prosecution':
         return renderProsecution();
       case 'defense':
