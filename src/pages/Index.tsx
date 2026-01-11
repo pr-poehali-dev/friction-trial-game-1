@@ -138,7 +138,7 @@ const questions: Question[] = [
   }
 ];
 
-export default function Index() {
+const Index = () => {
   const [stage, setStage] = useState<GameStage>('intro');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(Array(questions.length).fill(null));
@@ -158,9 +158,10 @@ export default function Index() {
 
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      const nextIndex = currentQuestion + 1;
+      setCurrentQuestion(nextIndex);
       setShowExplanation(false);
-      setSelectedAnswer(answers[currentQuestion + 1]);
+      setSelectedAnswer(answers[nextIndex]);
     } else {
       setStage('verdict');
     }
@@ -414,7 +415,16 @@ export default function Index() {
           ))}
         </div>
 
-        <Button onClick={() => setStage('quiz')} size="lg" className="w-full mt-6">
+        <Button 
+          onClick={() => {
+            setStage('quiz');
+            setCurrentQuestion(0);
+            setShowExplanation(false);
+            setSelectedAnswer(answers[0]);
+          }} 
+          size="lg" 
+          className="w-full mt-6"
+        >
           Перейти к проверке знаний
           <Icon name="ChevronRight" className="ml-2" size={20} />
         </Button>
@@ -442,7 +452,7 @@ export default function Index() {
             </CardHeader>
             <CardContent className="space-y-6">
               <RadioGroup 
-                value={selectedAnswer?.toString()} 
+                value={selectedAnswer !== null ? selectedAnswer.toString() : undefined} 
                 onValueChange={(value) => handleAnswerSelect(currentQuestion, parseInt(value))}
                 disabled={showExplanation}
               >
@@ -657,4 +667,6 @@ export default function Index() {
   };
 
   return renderStage();
-}
+};
+
+export default Index;
